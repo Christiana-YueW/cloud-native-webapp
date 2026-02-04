@@ -1,0 +1,1310 @@
+{
+  "info": {
+    "_postman_id": "ddafa385-dbbb-4b37-837f-bc46150ec5db",
+    "name": "CSYE 6225 - a2 - Integration Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52046193",
+    "_collection_link": "https://go.postman.co/collection/52046193-ddafa385-dbbb-4b37-837f-bc46150ec5db?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Health Check Tests",
+      "item": [
+        {
+          "name": "Health Check - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test 1: 验证状态码",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test 2: 验证响应体为空",
+                  "pm.test(\"Response body is empty\", function () {",
+                  "    pm.expect(pm.response.text()).to.eql(\"\");",
+                  "});",
+                  "",
+                  "// Test 3: 验证 Cache-Control header",
+                  "pm.test(\"Has Cache-Control header\", function () {",
+                  "    pm.response.to.have.header(\"Cache-Control\");",
+                  "    const cacheControl = pm.response.headers.get(\"Cache-Control\");",
+                  "    pm.expect(cacheControl).to.include(\"no-cache\");",
+                  "    pm.expect(cacheControl).to.include(\"no-store\");",
+                  "    pm.expect(cacheControl).to.include(\"must-revalidate\");",
+                  "});",
+                  "",
+                  "// Test 4: 验证 Pragma header",
+                  "pm.test(\"Has Pragma header\", function () {",
+                  "    pm.response.to.have.header(\"Pragma\");",
+                  "    pm.expect(pm.response.headers.get(\"Pragma\")).to.eql(\"no-cache\");",
+                  "});",
+                  "",
+                  "// Test 5: 验证响应时间合理",
+                  "pm.test(\"Response time is less than 500ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/healthz",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "healthz"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check - With Query Params",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Has cache headers\", function () {",
+                  "    pm.response.to.have.header(\"Cache-Control\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/healthz?test=value",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "healthz"
+              ],
+              "query": [
+                {
+                  "key": "test",
+                  "value": "value"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check - With Body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Has cache headers\", function () {",
+                  "    pm.response.to.have.header(\"Cache-Control\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test\": \"data\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/healthz",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "healthz"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check - Wrong Method",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 405\", function () {",
+                  "    pm.response.to.have.status(405);",
+                  "});",
+                  "",
+                  "pm.test(\"Has cache headers\", function () {",
+                  "    pm.response.to.have.header(\"Cache-Control\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/healthz",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "healthz"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "User API Tests",
+      "item": [
+        {
+          "name": "Create User Tests",
+          "item": [
+            {
+              "name": "Create User - Success",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "// Test 1: 验证状态码",
+                      "pm.test(\"Status code is 201\", function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "// Test 2: 验证 Content-Type",
+                      "pm.test(\"Content-Type is application/json\", function () {",
+                      "  pm.response.to.have.header(\"Content-Type\");",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                      "});",
+                      "",
+                      "// Test 3: 解析响应并验证结构",
+                      "pm.test(\"Response has correct structure\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "",
+                      "  pm.expect(jsonData).to.have.property(\"id\");",
+                      "  pm.expect(jsonData).to.have.property(\"username\");",
+                      "  pm.expect(jsonData).to.have.property(\"first_name\");",
+                      "  pm.expect(jsonData).to.have.property(\"last_name\");",
+                      "  pm.expect(jsonData).to.have.property(\"account_created\");",
+                      "  pm.expect(jsonData).to.have.property(\"account_updated\");",
+                      "",
+                      "  pm.expect(jsonData).to.not.have.property(\"password\");",
+                      "});",
+                      "",
+                      "// Test 4: 验证返回的数据值正确（用环境变量，不写死）",
+                      "pm.test(\"Response data matches request\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "",
+                      "  pm.expect(jsonData.username).to.eql(pm.environment.get(\"test_user_username\"));",
+                      "  pm.expect(jsonData.first_name).to.eql(\"John\");",
+                      "  pm.expect(jsonData.last_name).to.eql(\"Doe\");",
+                      "});",
+                      "",
+                      "// Test 5: 验证 id 是 UUID 格式",
+                      "pm.test(\"User ID is valid UUID\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
+                      "  pm.expect(jsonData.id).to.match(uuidRegex);",
+                      "});",
+                      "",
+                      "// Test 6: 保存用户信息到环境变量（用于后续测试）",
+                      "pm.test(\"Save user data for later tests\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "  pm.environment.set(\"test_user_id\", jsonData.id);",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{test_user_username}}\",\n  \"password\": \"{{test_user_password}}\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create User - Invalid Email",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 422\", function () {",
+                      "    pm.response.to.have.status(422);",
+                      "});",
+                      "",
+                      "pm.test(\"Content-Type is application/json\", function () {",
+                      "    pm.response.to.have.header(\"Content-Type\");",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains error message\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"not-an-email\",\n  \"password\": \"TestPassword123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create User - Duplicate Email",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 409\", function () {",
+                      "    pm.response.to.have.status(409);",
+                      "});",
+                      "",
+                      "pm.test(\"Content-Type is application/json\", function () {",
+                      "    pm.response.to.have.header(\"Content-Type\");",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains conflict message\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "    pm.expect(jsonData.detail).to.include(\"already exists\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"test@example.com\",\n  \"password\": \"DifferentPassword123!\",\n  \"first_name\": \"Another\",\n  \"last_name\": \"User\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create User - Missing Fields",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 422\", function () {",
+                      "    pm.response.to.have.status(422);",
+                      "});",
+                      "",
+                      "pm.test(\"Content-Type is application/json\", function () {",
+                      "    pm.response.to.have.header(\"Content-Type\");",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains validation errors\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "    pm.expect(Array.isArray(jsonData.detail)).to.be.true;",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"test@example.com\",\n  \"first_name\": \"John\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create User - Short Password",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 422\", function () {",
+                      "    pm.response.to.have.status(422);",
+                      "});",
+                      "",
+                      "pm.test(\"Content-Type is application/json\", function () {",
+                      "    pm.response.to.have.header(\"Content-Type\");",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains validation error about password\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "    ",
+                      "    const detailString = JSON.stringify(jsonData.detail);",
+                      "    pm.expect(detailString.toLowerCase()).to.include(\"password\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"short.password@example.com\",\n  \"password\": \"Short1\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create User - Invalid Format",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 415\", function () {",
+                      "    pm.response.to.have.status(415);",
+                      "});",
+                      "",
+                      "pm.test(\"Content-Type header exists in response\", function () {",
+                      "    pm.response.to.have.header(\"Content-Type\");",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains error about media type\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/plain",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "username=test@example.com&password=Pass123&first_name=John&last_name=Doe",
+                  "options": {
+                    "raw": {
+                      "language": "text"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Get User Tests",
+          "item": [
+            {
+              "name": "Get User - Success",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Content-Type is application/json\", function () {",
+                      "    pm.response.to.have.header(\"Content-Type\");",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                      "});",
+                      "",
+                      "pm.test(\"Response has correct user data\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    ",
+                      "    pm.expect(jsonData).to.have.property('id');",
+                      "    pm.expect(jsonData).to.have.property('username');",
+                      "    pm.expect(jsonData.username).to.eql(pm.environment.get(\"test_user_username\"));",
+                      "});",
+                      "",
+                      "pm.test(\"Password is not in response\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.not.have.property('password');",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "{{test_user_password}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{test_user_username}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get User - No Auth",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 401\", function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test(\"Has WWW-Authenticate header\", function () {",
+                      "    pm.response.to.have.header(\"WWW-Authenticate\");",
+                      "    const authHeader = pm.response.headers.get(\"WWW-Authenticate\");",
+                      "    pm.expect(authHeader).to.include(\"Basic\");",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains error message\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get User - Wrong Password",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 401\", function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test(\"Has WWW-Authenticate header\", function () {",
+                      "    pm.response.to.have.header(\"WWW-Authenticate\");",
+                      "    const authHeader = pm.response.headers.get(\"WWW-Authenticate\");",
+                      "    pm.expect(authHeader).to.include(\"Basic\");",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains authentication error\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "    pm.expect(jsonData.detail.toLowerCase()).to.include(\"password\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "WrongPassword123!",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{test_user_username}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Update User Tests",
+          "item": [
+            {
+              "name": "Update User - Success (First Name)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 204\", function () {",
+                      "    pm.response.to.have.status(204);",
+                      "});",
+                      "",
+                      "pm.test(\"Response body is empty\", function () {",
+                      "    pm.expect(pm.response.text()).to.eql(\"\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "{{test_user_password}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{test_user_username}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"UpdatedName\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User - Success (Password)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 204\", function () {",
+                      "    pm.response.to.have.status(204);",
+                      "});",
+                      "",
+                      "pm.test(\"Response body is empty\", function () {",
+                      "    pm.expect(pm.response.text()).to.eql(\"\");",
+                      "});",
+                      "",
+                      "pm.test(\"New password env var exists\", function () {",
+                      "  pm.expect(pm.environment.get(\"test_user_new_password\")).to.be.ok;",
+                      "});",
+                      "",
+                      "pm.environment.set(\"test_user_password\", pm.environment.get(\"test_user_new_password\"));",
+                      "",
+                      "",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "{{test_user_password}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{test_user_username}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"{{test_user_new_password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User - No Auth",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 401\", function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test(\"Has WWW-Authenticate header\", function () {",
+                      "    pm.response.to.have.header(\"WWW-Authenticate\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"Hacker\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User - Empty Body",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains error about empty update\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "    pm.expect(jsonData.detail.toLowerCase()).to.include(\"field\");",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "{{test_user_password}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{test_user_username}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User - Try Update Username",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains error about read-only field\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "{{test_user_password}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{test_user_username}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"newemail@example.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User - Try Update ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
+                      "});",
+                      "",
+                      "pm.test(\"Response contains error about read-only field\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "{{test_user_password}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{test_user_username}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"first_name\": \"Hacker\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "basic",
+        "basic": [
+          {
+            "key": "password",
+            "value": "{{test_user_password}}",
+            "type": "string"
+          },
+          {
+            "key": "username",
+            "value": "{{test_user_username}}",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}

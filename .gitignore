@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 *.so
 .Python
@@ -29,6 +30,7 @@ ENV/
 
 # Environment
 .env
+*.env
 .env.local
 
 # Logs
@@ -43,3 +45,10 @@ htmlcov/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+
+# Postman 
+postman_environment.json
+*.postman_environment.json
+# allow the template 
+!postman_environment.template.json
