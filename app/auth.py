@@ -2,8 +2,8 @@ import bcrypt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
-from database import get_db
-from models import User
+from app.database import get_db
+from app.models import User
 
 
 

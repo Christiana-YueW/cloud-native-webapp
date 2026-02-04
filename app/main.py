@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
-from database import get_db, engine, Base
-from models import User, HealthCheck
-from schemas import UserCreate, UserUpdate, UserResponse
-from auth import hash_password, get_current_user
+from app.database import get_db, engine, Base
+from app.models import User, HealthCheck
+from app.schemas import UserCreate, UserUpdate, UserResponse
+from app.auth import hash_password, get_current_user
 from datetime import datetime, timezone
+import base64
 
 
 Base.metadata.create_all(bind=engine)
@@ -30,6 +32,61 @@ app = FastAPI(
     version="1.0.0",
 
 )
+
+### validate the request
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    raw_errors = exc.errors()
+    content_type = request.headers.get("content-type", "")
+
+    def normalize(obj):
+        # 把 bytes 转成可 JSON 的字符串
+        if isinstance(obj, (bytes, bytearray)):
+            # 直接 decode（不可 decode 就用 base64）
+            try:
+                return obj.decode("utf-8", errors="replace")
+            except Exception:
+                return base64.b64encode(obj).decode("ascii")
+        if isinstance(obj, dict):
+            return {k: normalize(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [normalize(v) for v in obj]
+        if isinstance(obj, tuple):
+            return [normalize(v) for v in obj]  # tuple 改 list
+        return obj
+
+    errors = normalize(raw_errors)
+
+    # 判断是否 body 解析格式错误
+    def is_body_loc(e):
+        loc = e.get("loc")
+        return isinstance(loc, (list, tuple)) and len(loc) > 0 and loc[0] == "body"
+
+    is_body_format_error = any(
+        is_body_loc(e) and e.get("type") in [
+            "value_error.jsondecode",
+            "type_error.dict",
+            "json_invalid",
+            "model_attributes_type",
+        ]
+        for e in raw_errors
+    )
+
+    # 非 application/json 且 body 格式错误 => 415
+    if (not content_type.startswith("application/json")) and is_body_format_error:
+        return JSONResponse(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            content={
+                "detail": "Unsupported Media Type. Content-Type must be application/json"
+            },
+        )
+
+    # 其他校验错误 => 422
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": errors},
+    )
 
 
 ######## HealthCheck API
@@ -164,7 +221,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists"
         )
     
@@ -253,12 +310,22 @@ def get_user(current_user: User = Depends(get_current_user)):
 # account_updated is set by server on success
 # Return 400 for attempts to update any other field
 
-def update_user(
+async def update_user(
+    request: Request,
     user_update: UserUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    
+
+    raw = await request.json()
+
+    forbidden = {"id", "username", "account_created", "account_updated"}
+    if any(k in raw for k in forbidden):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Attempting to update read-only field"
+        )
+
     update_data = user_update.model_dump(exclude_unset=True)
     if not update_data:
         raise HTTPException(
