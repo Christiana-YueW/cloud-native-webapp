@@ -3,6 +3,9 @@ name: Integration Tests (Postman/Newman)
 on:
   pull_request:
     branches: [ "main" ]
+  push:
+    branches: [ "**" ]  # Run on all branches to test secrets
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   newman:
@@ -83,6 +86,13 @@ jobs:
           echo "Generated Postman environment file:"
           cat postman_environment.ci.json | jq '.values[] | {key: .key, value_length: (.value | length)}'
 
+      - name: Reset database
+        run: |
+          echo "Resetting database to ensure clean state..."
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "DROP DATABASE IF EXISTS cloud_app;"
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "CREATE DATABASE cloud_app;"
+          echo "✓ Database reset complete"
+
       - name: Start API (Uvicorn)
         run: |
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > uvicorn.log 2>&1 &
@@ -112,7 +122,7 @@ jobs:
           echo "Sending POST request to /v1/user..."
           curl -v -X POST http://127.0.0.1:8000/v1/user \
             -H "Content-Type: application/json" \
-            -d "{\"username\":\"$TEST_USER_USERNAME\",\"password\":\"$TEST_USER_PASSWORD\",\"first_name\":\"John\",\"last_name\":\"Doe\"}" \
+            -d "{\"username\":\"debug-test@example.com\",\"password\":\"DebugPassword123!\",\"first_name\":\"Debug\",\"last_name\":\"Test\"}" \
             2>&1 | head -50
 
       - name: Run Newman collection
