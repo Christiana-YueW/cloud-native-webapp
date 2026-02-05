@@ -65,4 +65,5 @@ This design complies with the course **zero-tolerance credential policy**.
 ## Local execution (optional)
 
 Local execution is optional.  
+
 **Grading is based on CI results from GitHub Actions on the Pull Request.**
