@@ -50,6 +50,19 @@ jobs:
         run: |
           npm install -g newman
 
+      - name: Debug - Check environment variables
+        run: |
+          echo "Checking if secrets are set..."
+          echo "TEST_USER_USERNAME is set: ${{ secrets.TEST_USER_USERNAME != '' }}"
+          echo "TEST_USER_PASSWORD is set: ${{ secrets.TEST_USER_PASSWORD != '' }}"
+          echo "TEST_USER_NEW_PASSWORD is set: ${{ secrets.TEST_USER_NEW_PASSWORD != '' }}"
+          if [ -z "$TEST_USER_USERNAME" ]; then
+            echo "⚠️ WARNING: TEST_USER_USERNAME is empty!"
+          fi
+          if [ -z "$TEST_USER_PASSWORD" ]; then
+            echo "⚠️ WARNING: TEST_USER_PASSWORD is empty!"
+          fi
+
       - name: Prepare Postman environment from template
         run: |
           node -e "
@@ -65,6 +78,11 @@ jobs:
           fs.writeFileSync('postman_environment.ci.json', JSON.stringify(env,null,2));
           "
 
+      - name: Debug - Show generated environment (masked)
+        run: |
+          echo "Generated Postman environment file:"
+          cat postman_environment.ci.json | jq '.values[] | {key: .key, value_length: (.value | length)}'
+
       - name: Start API (Uvicorn)
         run: |
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > uvicorn.log 2>&1 &
@@ -75,24 +93,53 @@ jobs:
           for i in {1..30}; do
             code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/healthz || true)
             if [ "$code" = "200" ]; then
-              echo "healthz ok"
+              echo "✓ healthz ok"
               exit 0
             fi
             echo "waiting... ($i) code=$code"
             sleep 2
           done
-          echo "uvicorn log:"
+          echo "✗ API failed to start. uvicorn log:"
           cat uvicorn.log || true
           exit 1
 
+      - name: Debug - Test create user endpoint manually
+        run: |
+          echo "Testing create user endpoint with test credentials..."
+          echo "Username length: ${#TEST_USER_USERNAME}"
+          echo "Password length: ${#TEST_USER_PASSWORD}"
+          echo ""
+          echo "Sending POST request to /v1/user..."
+          curl -v -X POST http://127.0.0.1:8000/v1/user \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"$TEST_USER_USERNAME\",\"password\":\"$TEST_USER_PASSWORD\",\"first_name\":\"John\",\"last_name\":\"Doe\"}" \
+            2>&1 | head -50
+
       - name: Run Newman collection
         run: |
+          echo "Running Newman tests..."
           newman run postman_collection.json \
             -e postman_environment.ci.json \
-            --env-var base_url=http://127.0.0.1:8000
+            --env-var base_url=http://127.0.0.1:8000 \
+            --reporters cli \
+            --reporter-cli-no-banner \
+            --color on
           
-      - name: Print API logs on failure
+      - name: Debug - Print logs on failure
         if: failure()
         run: |
-          echo "====== uvicorn.log ======"
-          cat uvicorn.log || true
+          echo "=========================================="
+          echo "Environment Debug Info"
+          echo "=========================================="
+          echo "TEST_USER_USERNAME length: ${#TEST_USER_USERNAME}"
+          echo "TEST_USER_PASSWORD length: ${#TEST_USER_PASSWORD}"
+          echo ""
+          echo "=========================================="
+          echo "Generated Postman Environment (masked)"
+          echo "=========================================="
+          cat postman_environment.ci.json | jq '.' || cat postman_environment.ci.json
+          echo ""
+          echo "=========================================="
+          echo "API Logs (uvicorn.log)"
+          echo "=========================================="
+          cat uvicorn.log || echo "No uvicorn.log found"
