@@ -66,6 +66,22 @@ jobs:
             echo "⚠️ WARNING: TEST_USER_PASSWORD is empty!"
           fi
 
+      
+      
+      
+      - name: Fallback credentials when secrets are missing
+        run: |
+          if [ -z "$TEST_USER_USERNAME" ]; then
+            echo "TEST_USER_USERNAME=ci-$(date +%s)@example.com" >> $GITHUB_ENV
+          fi
+          if [ -z "$TEST_USER_PASSWORD" ]; then
+            echo "TEST_USER_PASSWORD=TestPassword123!" >> $GITHUB_ENV
+          fi
+          if [ -z "$TEST_USER_NEW_PASSWORD" ]; then
+            echo "TEST_USER_NEW_PASSWORD=NewPassword123!" >> $GITHUB_ENV
+          fi
+
+
       - name: Prepare Postman environment from template
         run: |
           node -e "
@@ -131,6 +147,7 @@ jobs:
           newman run postman_collection.json \
             -e postman_environment.ci.json \
             --env-var base_url=http://127.0.0.1:8000 \
+            --env-var test_user_username=ci-$(date +%s)@example.com \
             --reporters cli \
             --reporter-cli-no-banner \
             --color on

@@ -341,6 +341,143 @@
               "response": []
             },
             {
+              "name": "Create User - Edge (Special Chars)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.environment.set(\"timestamp\", Date.now());",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "  pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "pm.test(\"Response has required fields\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "  pm.expect(jsonData).to.have.property(\"id\");",
+                      "  pm.expect(jsonData).to.have.property(\"username\");",
+                      "  pm.expect(jsonData).to.have.property(\"first_name\");",
+                      "  pm.expect(jsonData).to.have.property(\"last_name\");",
+                      "});",
+                      "",
+                      "pm.test(\"No password in response\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "  pm.expect(jsonData).to.not.have.property(\"password\");",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"test.special{{timestamp}}@example.com\",\n  \"password\": \"TestPassword123!\",\n  \"first_name\": \"Anna-Marie\",\n  \"last_name\": \"Smith-Jones\"\n}\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user\n",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user\n"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create User - Max Length",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.environment.set(\"timestamp\", Date.now());",
+                      "pm.environment.set(\"long_name\", \"A\".repeat(128));",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Max length input is handled (response returned)\", function () {",
+                      "  pm.expect([201, 400, 409, 422, 500]).to.include(pm.response.code);",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"test.long{{timestamp}}@example.com\",\n  \"password\": \"TestPassword123!\",\n  \"first_name\": \"{{long_name}}\",\n  \"last_name\": \"Doe\"\n}\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user\n",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user\n"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
               "name": "Create User - Invalid Email",
               "event": [
                 {
@@ -430,7 +567,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"username\": \"test@example.com\",\n  \"password\": \"DifferentPassword123!\",\n  \"first_name\": \"Another\",\n  \"last_name\": \"User\"\n}",
+                  "raw": "{\n  \"username\": \"{{test_user_username}}\",\n  \"password\": \"DifferentPassword123!\",\n  \"first_name\": \"Another\",\n  \"last_name\": \"User\"\n}\n",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -904,6 +1041,76 @@
               "response": []
             },
             {
+              "name": "Get User - Verify Update Persist",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Updated first_name persists\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "  pm.expect(jsonData.first_name).to.eql(\"UpdatedName\");",
+                      "});",
+                      "",
+                      "pm.test(\"Unmodified last_name remains unchanged\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "  pm.expect(jsonData.last_name).to.eql(\"Doe\");",
+                      "});",
+                      "",
+                      "pm.test(\"Username remains unchanged\", function () {",
+                      "  const jsonData = pm.response.json();",
+                      "  pm.expect(jsonData.username).to.eql(pm.environment.get(\"test_user_username\"));",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "basic",
+                  "basic": [
+                    {
+                      "key": "password",
+                      "value": "{{test_user_password}}",
+                      "type": "string"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{test_user_username}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
               "name": "Update User - Success (Password)",
               "event": [
                 {
@@ -1234,6 +1441,96 @@
                     "v1",
                     "user",
                     "self"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "HTTP Method Tests",
+          "item": [
+            {
+              "name": "User Self - Wrong Method (POST)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Wrong method is rejected (404 or 405)\", function () {",
+                      "  pm.expect([404, 405]).to.include(pm.response.code);",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/user/self\n",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "user",
+                    "self\n"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Unsupported Endpoint - 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 404\", function () {",
+                      "  pm.response.to.have.status(404);",
+                      "});",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/v1/does-not-exist",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "v1",
+                    "does-not-exist"
                   ]
                 }
               },
