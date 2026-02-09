@@ -567,7 +567,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"username\": \"test@example.com\",\n  \"password\": \"DifferentPassword123!\",\n  \"first_name\": \"Another\",\n  \"last_name\": \"User\"\n}",
+                  "raw": "{\n  \"username\": \"{{test_user_username}}\",\n  \"password\": \"DifferentPassword123!\",\n  \"first_name\": \"Another\",\n  \"last_name\": \"User\"\n}\n",
                   "options": {
                     "raw": {
                       "language": "json"
