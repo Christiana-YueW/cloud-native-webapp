@@ -147,6 +147,7 @@ jobs:
           newman run postman_collection.json \
             -e postman_environment.ci.json \
             --env-var base_url=http://127.0.0.1:8000 \
+            --env-var test_user_username=ci-$(date +%s)@example.com \
             --reporters cli \
             --reporter-cli-no-banner \
             --color on
