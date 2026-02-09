@@ -341,6 +341,22 @@
               "response": []
             },
             {
+              "name": "Create User - Edge (Special Chars)",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            },
+            {
+              "name": "Create User - Max Length",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            },
+            {
               "name": "Create User - Invalid Email",
               "event": [
                 {
@@ -904,6 +920,14 @@
               "response": []
             },
             {
+              "name": "Get User - Verify Update Persist",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            },
+            {
               "name": "Update User - Success (Password)",
               "event": [
                 {
@@ -1236,6 +1260,27 @@
                     "self"
                   ]
                 }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "HTTP Method Tests",
+          "item": [
+            {
+              "name": "User Self - Wrong Method (POST)",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            },
+            {
+              "name": "Unsupported Endpoint - 404",
+              "request": {
+                "method": "GET",
+                "header": []
               },
               "response": []
             }
