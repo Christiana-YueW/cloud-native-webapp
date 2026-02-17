@@ -226,7 +226,7 @@ create_app_user() {
         # -g: primary group
         # -d: home directory
         # -M: do not create home directory
-        useradd -r -s /bin/false -g "$APP_GROUP" -d "$APP_DIR" -M "$APP_USER"
+        useradd -r -s /usr/sbin/nologin -g "$APP_GROUP" -d "$APP_DIR" -M "$APP_USER"
         log_info "✓ Non-login user '$APP_USER' created successfully"
     fi
     
