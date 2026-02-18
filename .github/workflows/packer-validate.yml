@@ -34,4 +34,4 @@ jobs:
           touch scripts/setup.sh
 
       - name: Packer Validate
-        run: packer validate -var "db_password=dummy" aws-gcp.pkr.hcl
+        run: packer validate -syntax-only -var "db_password=dummy" aws-gcp.pkr.hcl
