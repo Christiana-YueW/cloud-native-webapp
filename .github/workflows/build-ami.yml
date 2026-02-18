@@ -81,7 +81,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build application artifact
-        run: zip -r webapp.zip app/ requirements.txt
+        run: zip -r webapp.zip app/ requirements.txt scripts/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
