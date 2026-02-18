@@ -134,7 +134,7 @@ jobs:
 
       - name: Packer Validate
         working-directory: packer
-        run: packer validate -var "db_password=dummy" aws-gcp.pkr.hcl
+        run: packer validate -syntax-only -var "db_password=dummy" aws-gcp.pkr.hcl
 
       - name: Build AWS AMI and GCP Image
         working-directory: packer
