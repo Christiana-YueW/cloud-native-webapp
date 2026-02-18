@@ -1,0 +1,31 @@
+name: Packer Validate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  packer-validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packer
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+        with:
+          version: "1.15.0"
+
+      - name: Packer Init
+        run: packer init aws-gcp.pkr.hcl
+
+      - name: Packer Format Check
+        run: packer fmt -check aws-gcp.pkr.hcl
+
+      - name: Packer Validate
+        run: packer validate -var "db_password=dummy" aws-gcp.pkr.hcl
