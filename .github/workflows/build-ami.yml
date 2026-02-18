@@ -146,3 +146,17 @@ jobs:
             -var "db_password=$DB_PASSWORD" \
             -var "app_zip=../webapp.zip" \
             aws-gcp.pkr.hcl
+
+      - name: Share GCP Image with DEMO project
+        run: |
+          IMAGE=$(gcloud compute images list \
+            --project=yuewu-csye6225-dev \
+            --filter="name:csye6225-webapp" \
+            --sort-by=~creationTimestamp \
+            --limit=1 \
+            --format="value(name)")
+          echo "Sharing image: $IMAGE"
+          gcloud compute images add-iam-policy-binding $IMAGE \
+            --project=yuewu-csye6225-dev \
+            --member=projectViewer:yuewu-csye6225-demo \
+            --role=roles/compute.imageUser
