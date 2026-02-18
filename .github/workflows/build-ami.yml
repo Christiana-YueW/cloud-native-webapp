@@ -43,12 +43,24 @@ jobs:
         run: |
           export DATABASE_URL="postgresql://csye6225_user:testpassword@localhost:5432/csye6225_db"
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          UP=0
           for i in {1..30}; do
             if curl -fsS http://localhost:8000/healthz > /dev/null; then
-              echo "App is up"; break
+              echo "App is up"
+              UP=1
+              break
             fi
             sleep 1
           done
+          if [ "$UP" -ne 1 ]; then
+            echo "App failed to start in time"
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
       - name: Run integration tests
         run: |
@@ -119,6 +131,10 @@ jobs:
       - name: Packer Init
         working-directory: packer
         run: packer init aws-gcp.pkr.hcl
+
+      - name: Packer Validate
+        working-directory: packer
+        run: packer validate -var "db_password=dummy" aws-gcp.pkr.hcl
 
       - name: Build AWS AMI and GCP Image
         working-directory: packer
