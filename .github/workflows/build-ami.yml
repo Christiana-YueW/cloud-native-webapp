@@ -40,8 +40,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Start application
+        env:
+          DATABASE_URL: "postgresql://csye6225_user:testpassword@127.0.0.1:5432/csye6225_db"
         run: |
-          export DATABASE_URL="postgresql://csye6225_user:testpassword@localhost:5432/csye6225_db"
           uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           UP=0
           for i in {1..30}; do
