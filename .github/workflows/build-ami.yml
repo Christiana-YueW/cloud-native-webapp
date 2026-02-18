@@ -158,5 +158,5 @@ jobs:
           echo "Sharing image: $IMAGE"
           gcloud compute images add-iam-policy-binding $IMAGE \
             --project=yuewu-csye6225-dev \
-            --member=projectViewer:yuewu-csye6225-demo \
+            --member=projectEditor:yuewu-csye6225-demo \
             --role=roles/compute.imageUser
