@@ -114,7 +114,7 @@ build {
   }
 
   provisioner "file" {
-    source      = "scripts/setup.sh"
+    source      = "../scripts/setup.sh"
     destination = "/tmp/setup.sh"
   }
 
@@ -143,7 +143,7 @@ build {
   }
 
   provisioner "file" {
-    source      = "scripts/setup.sh"
+    source      = "../scripts/setup.sh"
     destination = "/tmp/setup.sh"
   }
 
