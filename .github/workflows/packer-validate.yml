@@ -27,5 +27,11 @@ jobs:
       - name: Packer Format Check
         run: packer fmt -check aws-gcp.pkr.hcl
 
+      - name: Create dummy files for validation
+        run: |
+          touch webapp.zip
+          mkdir -p scripts
+          touch scripts/setup.sh
+
       - name: Packer Validate
         run: packer validate -var "db_password=dummy" aws-gcp.pkr.hcl

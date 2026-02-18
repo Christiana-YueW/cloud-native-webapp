@@ -92,6 +92,7 @@ source "googlecompute" "ubuntu" {
   source_image_project_id = ["ubuntu-os-cloud"]
 
   image_name        = "csye6225-webapp-{{timestamp}}"
+  image_family      = "csye6225-webapp"
   image_description = "Custom GCP Image for CSYE6225 webapp"
 
 
