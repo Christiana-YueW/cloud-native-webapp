@@ -36,10 +36,13 @@ async def _detect_platform() -> str | None:
                 return "gcp"
     except Exception:
         pass
-    # 再试 AWS
+# 再试 AWS
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.get("http://169.254.169.254/latest/meta-data/")
+            resp = await client.get(
+                "http://169.254.169.254/latest/meta-data/",
+                timeout=httpx.Timeout(1.0, connect=0.5)
+            )
             if resp.status_code == 200:
                 return "aws"
     except Exception:
