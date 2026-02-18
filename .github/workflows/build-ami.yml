@@ -1,0 +1,147 @@
+name: Build AMI
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: build-images-main
+  cancel-in-progress: true
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: csye6225_user
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: csye6225_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Start application
+        run: |
+          export DATABASE_URL="postgresql://csye6225_user:testpassword@localhost:5432/csye6225_db"
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          UP=0
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/healthz > /dev/null; then
+              echo "App is up"
+              UP=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$UP" -ne 1 ]; then
+            echo "App failed to start in time"
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run integration tests
+        run: |
+          npm install -g newman
+          newman run postman_collection.json \
+            --env-var "base_url=http://localhost:8000" \
+            --env-var "test_user_username=test_$(date +%s)@example.com" \
+            --env-var "test_user_password=TestPassword123!" \
+            --env-var "test_user_new_password=NewPassword123!"
+
+  build-artifact:
+    runs-on: ubuntu-latest
+    needs: integration-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build application artifact
+        run: zip -r webapp.zip app/ requirements.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-zip
+          path: webapp.zip
+
+  build-ami:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp-zip
+          path: .
+
+      - name: Verify artifact
+        run: ls -lah webapp.zip
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup GCP credentials
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Set GCP project
+        run: gcloud config set project yuewu-csye6225-dev
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+        with:
+          version: "1.15.0"
+
+      - name: Packer Init
+        working-directory: packer
+        run: packer init aws-gcp.pkr.hcl
+
+      - name: Packer Validate
+        working-directory: packer
+        run: packer validate -var "db_password=dummy" aws-gcp.pkr.hcl
+
+      - name: Build AWS AMI and GCP Image
+        working-directory: packer
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          packer build \
+            -var "db_password=$DB_PASSWORD" \
+            -var "app_zip=../webapp.zip" \
+            aws-gcp.pkr.hcl
