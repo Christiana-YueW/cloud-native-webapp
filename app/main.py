@@ -36,18 +36,19 @@ async def _detect_platform() -> str | None:
                 return "gcp"
     except Exception:
         pass
-# 再试 AWS
+    # 再试 AWS (IMDSv2)
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.get(
-                "http://169.254.169.254/latest/meta-data/",
+            # 先获取 token
+            token_resp = await client.put(
+                "http://169.254.169.254/latest/api/token",
+                headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
                 timeout=httpx.Timeout(1.0, connect=0.5)
             )
-            if resp.status_code == 200:
+            if token_resp.status_code == 200:
                 return "aws"
     except Exception:
         pass
-    return None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -253,12 +254,20 @@ async def _get_aws_metadata() -> dict:
     timeout = httpx.Timeout(5.0)
 
     async with httpx.AsyncClient(timeout=timeout) as client:
+        # 获取 IMDSv2 token
+        token_resp = await client.put(
+            "http://169.254.169.254/latest/api/token",
+            headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"}
+        )
+        token = token_resp.text.strip()
 
         async def get(path):
-            r = await client.get(f"{base}{path}")
+            r = await client.get(
+                f"{base}{path}",
+                headers={"X-aws-ec2-metadata-token": token}
+            )
             r.raise_for_status()
             return r.text.strip()
-
         instance_id = await get("/instance-id")
 
         az = await get("/placement/availability-zone")
