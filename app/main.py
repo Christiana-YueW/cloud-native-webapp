@@ -405,7 +405,7 @@ async def metadata_method_not_allowed():
 @app.post('/v1/user', response_model=UserResponse,
           status_code=status.HTTP_201_CREATED,
           summary='Create a user account')
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+def create_user(user: UserCreate, response: Response, db: Session = Depends(get_db)):
 
     existing_user = db.query(User).filter(User.username == user.username).first()
     if existing_user:
@@ -431,6 +431,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists"
         )
+    response.headers["Location"] = f"/v1/user/self"
     return new_user
 
 
@@ -514,6 +515,7 @@ def list_courses(
 @app.post("/v1/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
 def create_course(
     course: CourseCreate,
+    response: Response,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -547,6 +549,7 @@ def create_course(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Course {course.department_code} {course.number} already exists"
         )
+    response.headers["Location"] = f"/v1/courses/{new_course.id}"
     return new_course
 
 
@@ -638,6 +641,7 @@ def delete_course(
 async def upload_syllabus(
     course_id: UUID,
     request: Request,
+    response: Response,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -752,6 +756,7 @@ async def upload_syllabus(
         )
 
     db.refresh(syllabus)
+    response.headers["Location"] = f"/v1/courses/{course_id}/syllabus"
     return syllabus
 
 
