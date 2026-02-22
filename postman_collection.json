@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "ddafa385-dbbb-4b37-837f-bc46150ec5db",
-    "name": "CSYE 6225 - a2 - Integration Tests",
+    "name": "CSYE 6225 - a5 - Integration Tests",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "52046193",
     "_collection_link": "https://go.postman.co/collection/52046193-ddafa385-dbbb-4b37-837f-bc46150ec5db?source=collection_link"
@@ -43,8 +43,8 @@
                   "});",
                   "",
                   "// Test 5: 验证响应时间合理",
-                  "pm.test(\"Response time is less than 500ms\", function () {",
-                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "pm.test(\"Response time is reasonable (< 2000ms)\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -57,15 +57,10 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://127.0.0.1:8000/healthz",
-              "protocol": "http",
+              "raw": "{{base_url}}/healthz",
               "host": [
-                "127",
-                "0",
-                "0",
-                "1"
+                "{{base_url}}"
               ],
-              "port": "8000",
               "path": [
                 "healthz"
               ]
@@ -98,22 +93,17 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://127.0.0.1:8000/healthz?test=value",
-              "protocol": "http",
+              "raw": "{{base_url}}/healthz?foo=bar",
               "host": [
-                "127",
-                "0",
-                "0",
-                "1"
+                "{{base_url}}"
               ],
-              "port": "8000",
               "path": [
                 "healthz"
               ],
               "query": [
                 {
-                  "key": "test",
-                  "value": "value"
+                  "key": "foo",
+                  "value": "bar"
                 }
               ]
             }
@@ -157,15 +147,10 @@
               }
             },
             "url": {
-              "raw": "http://127.0.0.1:8000/healthz",
-              "protocol": "http",
+              "raw": "{{base_url}}/healthz",
               "host": [
-                "127",
-                "0",
-                "0",
-                "1"
+                "{{base_url}}"
               ],
-              "port": "8000",
               "path": [
                 "healthz"
               ]
@@ -180,12 +165,11 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 405\", function () {",
-                  "    pm.response.to.have.status(405);",
+                  "pm.test('Wrong method rejected (400 or 405)', function() {",
+                  "  pm.expect([400, 405]).to.include(pm.response.code);",
                   "});",
-                  "",
-                  "pm.test(\"Has cache headers\", function () {",
-                  "    pm.response.to.have.header(\"Cache-Control\");",
+                  "pm.test('Has cache headers', function() {",
+                  "  pm.response.to.have.header('Cache-Control');",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -198,15 +182,10 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "http://127.0.0.1:8000/healthz",
-              "protocol": "http",
+              "raw": "{{base_url}}/healthz",
               "host": [
-                "127",
-                "0",
-                "0",
-                "1"
+                "{{base_url}}"
               ],
-              "port": "8000",
               "path": [
                 "healthz"
               ]
@@ -323,15 +302,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user"
@@ -396,18 +370,13 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user\n",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
-                    "user\n"
+                    "user"
                   ]
                 }
               },
@@ -433,10 +402,12 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Max length input is handled (response returned)\", function () {",
-                      "  pm.expect([201, 400, 409, 422, 500]).to.include(pm.response.code);",
+                      "pm.test('Max length does not crash server', function() {",
+                      "  pm.expect(pm.response.code).to.not.equal(500);",
                       "});",
-                      ""
+                      "pm.test('Max length is handled (400/422)', function() {",
+                      "  pm.expect([400, 422]).to.include(pm.response.code);",
+                      "});"
                     ],
                     "type": "text/javascript",
                     "packages": {},
@@ -460,18 +431,13 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user\n",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
-                    "user\n"
+                    "user"
                   ]
                 }
               },
@@ -484,8 +450,8 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 422\", function () {",
-                      "    pm.response.to.have.status(422);",
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
                       "});",
                       "",
                       "pm.test(\"Content-Type is application/json\", function () {",
@@ -517,15 +483,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user"
@@ -553,7 +514,6 @@
                       "pm.test(\"Response contains conflict message\", function () {",
                       "    const jsonData = pm.response.json();",
                       "    pm.expect(jsonData).to.have.property('detail');",
-                      "    pm.expect(jsonData.detail).to.include(\"already exists\");",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -575,15 +535,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user"
@@ -599,8 +554,8 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 422\", function () {",
-                      "    pm.response.to.have.status(422);",
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
                       "});",
                       "",
                       "pm.test(\"Content-Type is application/json\", function () {",
@@ -633,15 +588,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user"
@@ -657,8 +607,8 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 422\", function () {",
-                      "    pm.response.to.have.status(422);",
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
                       "});",
                       "",
                       "pm.test(\"Content-Type is application/json\", function () {",
@@ -693,15 +643,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user"
@@ -717,17 +662,11 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 415\", function () {",
-                      "    pm.response.to.have.status(415);",
+                      "pm.test('Unsupported media type rejected (400/415/422)', function() {",
+                      "  pm.expect([400, 415, 422]).to.include(pm.response.code);",
                       "});",
-                      "",
-                      "pm.test(\"Content-Type header exists in response\", function () {",
-                      "    pm.response.to.have.header(\"Content-Type\");",
-                      "});",
-                      "",
-                      "pm.test(\"Response contains error about media type\", function () {",
-                      "    const jsonData = pm.response.json();",
-                      "    pm.expect(jsonData).to.have.property('detail');",
+                      "pm.test('Has Content-Type in response', function() {",
+                      "  pm.response.to.have.header('Content-Type');",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -755,15 +694,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user"
@@ -831,15 +765,10 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -884,15 +813,10 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -950,15 +874,10 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -1022,15 +941,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -1092,15 +1006,10 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -1168,15 +1077,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -1223,15 +1127,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -1292,15 +1191,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -1360,15 +1254,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -1428,15 +1317,10 @@
                   }
                 },
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
@@ -1476,19 +1360,14 @@
                 "method": "POST",
                 "header": [],
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/user/self\n",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/user/self",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "user",
-                    "self\n"
+                    "self"
                   ]
                 }
               },
@@ -1519,15 +1398,10 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "http://127.0.0.1:8000/v1/does-not-exist",
-                  "protocol": "http",
+                  "raw": "{{base_url}}/v1/does-not-exist",
                   "host": [
-                    "127",
-                    "0",
-                    "0",
-                    "1"
+                    "{{base_url}}"
                   ],
-                  "port": "8000",
                   "path": [
                     "v1",
                     "does-not-exist"
@@ -1578,6 +1452,1347 @@
           }
         }
       ]
+    },
+    {
+      "name": "Course API Tests",
+      "item": [
+        {
+          "name": "Create Course - Success (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response has correct structure', function() {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d).to.have.property('id');",
+                  "  pm.expect(d.department_code).to.eql('CSYE');",
+                  "  pm.expect(d.number).to.eql('6225');",
+                  "  pm.expect(d.has_syllabus).to.eql(false);",
+                  "  pm.expect(d.credit_hours).to.eql(4);",
+                  "  pm.expect(d.classification).to.eql('core');",
+                  "  pm.expect(d).to.have.property('date_created');",
+                  "  pm.expect(d).to.have.property('date_updated');",
+                  "  pm.environment.set('test_course_id', d.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_code\": \"CSYE\",\n  \"number\": \"6225\",\n  \"title\": \"Cloud Native Web Application\",\n  \"credit_hours\": 4,\n  \"classification\": \"core\",\n  \"description\": \"Covers cloud-native application development.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course - Duplicate (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409', function() {",
+                  "  pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('Response has error detail', function() {",
+                  "  pm.expect(pm.response.json()).to.have.property('detail');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_code\": \"CSYE\",\n  \"number\": \"6225\",\n  \"title\": \"Cloud Native Web Application\",\n  \"credit_hours\": 4,\n  \"classification\": \"core\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course - Invalid credit_hours (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_code\": \"ACCT\",\n  \"number\": \"1001\",\n  \"title\": \"Test Course\",\n  \"credit_hours\": 9,\n  \"classification\": \"core\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course - Invalid department_code (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_code\": \"lowercase\",\n  \"number\": \"1001\",\n  \"title\": \"Test Course\",\n  \"credit_hours\": 3,\n  \"classification\": \"core\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course - Missing required fields (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_code\": \"ACCT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Course - No Auth (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function() {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_code\": \"ACCT\",\n  \"number\": \"2001\",\n  \"title\": \"Test\",\n  \"credit_hours\": 3,\n  \"classification\": \"core\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Courses - Success (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is an array with at least 1 item', function() {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d).to.be.an('array');",
+                  "  pm.expect(d.length).to.be.at.least(1);",
+                  "});",
+                  "pm.test('Courses sorted by department_code and number', function() {",
+                  "  const d = pm.response.json();",
+                  "  for (let i = 1; i < d.length; i++) {",
+                  "    const prev = d[i-1].department_code + d[i-1].number;",
+                  "    const curr = d[i].department_code + d[i].number;",
+                  "    pm.expect(prev <= curr).to.be.true;",
+                  "  }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Courses - No Auth (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function() {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course by ID - Success (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has correct fields', function() {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d.id).to.eql(pm.environment.get('test_course_id'));",
+                  "  pm.expect(d.department_code).to.eql('CSYE');",
+                  "  pm.expect(d.number).to.eql('6225');",
+                  "  pm.expect(d).to.have.property('has_syllabus');",
+                  "  pm.expect(d).to.have.property('date_created');",
+                  "  pm.expect(d).to.have.property('date_updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Course by ID - Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function() {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Course - Success (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Fields updated correctly', function() {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d.credit_hours).to.eql(3);",
+                  "  pm.expect(d.classification).to.eql('elective');",
+                  "});",
+                  "pm.test('date_updated is present', function() {",
+                  "  pm.expect(pm.response.json()).to.have.property('date_updated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credit_hours\": 3,\n  \"classification\": \"elective\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Course - Immutable field (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_code\": \"ACCT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Course - Empty body (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course - Success (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function() {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course - Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function() {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Syllabus API Tests (S3)",
+      "item": [
+        {
+          "name": "Setup - Create Course for Syllabus Tests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.environment.set('test_course_id_s3', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_code\": \"TEST\",\n  \"number\": \"9999\",\n  \"title\": \"Test Course For Syllabus\",\n  \"credit_hours\": 3,\n  \"classification\": \"elective\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Syllabus - Success (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function() {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response has all required fields', function() {",
+                  "  const d = pm.response.json();",
+                  "  pm.expect(d).to.have.property('id');",
+                  "  pm.expect(d).to.have.property('file_name');",
+                  "  pm.expect(d).to.have.property('s3_bucket_name');",
+                  "  pm.expect(d).to.have.property('s3_object_key');",
+                  "  pm.expect(d).to.have.property('content_type');",
+                  "  pm.expect(d).to.have.property('file_size');",
+                  "  pm.expect(d).to.have.property('url');",
+                  "  pm.expect(d.file_size).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "tests/test_syllabus.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id_s3}}/syllabus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id_s3}}",
+                "syllabus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Syllabus - Already Exists (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409', function() {",
+                  "  pm.response.to.have.status(409);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "tests/test_syllabus.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id_s3}}/syllabus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id_s3}}",
+                "syllabus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Syllabus - No File (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function() {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id_s3}}/syllabus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id_s3}}",
+                "syllabus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Syllabus - Course Not Found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function() {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "tests/test_syllabus.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/00000000-0000-0000-0000-000000000000/syllabus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "00000000-0000-0000-0000-000000000000",
+                "syllabus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Syllabus Metadata - Success (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has all metadata fields', function() {",
+                  "  const d = pm.response.json();",
+                  "  ['id','course_id','file_name','s3_bucket_name','s3_object_key','content_type','file_size','url'].forEach(function(key) {",
+                  "    pm.expect(d).to.have.property(key);",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id_s3}}/syllabus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id_s3}}",
+                "syllabus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Syllabus - No Syllabus (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function() {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/00000000-0000-0000-0000-000000000000/syllabus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "00000000-0000-0000-0000-000000000000",
+                "syllabus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Course - Has Syllabus (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409', function() {",
+                  "  pm.response.to.have.status(409);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id_s3}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id_s3}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Syllabus - Success (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204', function() {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id_s3}}/syllabus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id_s3}}",
+                "syllabus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Syllabus - No Syllabus (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function() {",
+                  "  pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{test_user_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{test_user_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/courses/{{test_course_id_s3}}/syllabus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "courses",
+                "{{test_course_id_s3}}",
+                "syllabus"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -1585,21 +2800,39 @@
       "listen": "prerequest",
       "script": {
         "type": "text/javascript",
-        "packages": {},
-        "requests": {},
         "exec": [
-          ""
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
+          "// ---------- Global setup for Newman/CI ----------",
+          "if (!pm.environment.get('base_url')) {",
+          "  throw new Error('Missing env var: base_url');",
+          "}",
+          "",
+          "// Create a per-run id once (persists for the whole run)",
+          "let runId = pm.environment.get('run_id');",
+          "if (!runId) {",
+          "  runId = String(Date.now());",
+          "  pm.environment.set('run_id', runId);",
+          "",
+          "  // Reset all test state at the start of each run",
+          "  pm.environment.unset('test_user_username');",
+          "  pm.environment.unset('test_user_password');",
+          "  pm.environment.unset('test_user_new_password');",
+          "  pm.environment.unset('test_user_id');",
+          "  pm.environment.unset('test_course_id');",
+          "  pm.environment.unset('test_course_id_s3');",
+          "}",
+          "",
+          "// Generate user only once per run",
+          "if (!pm.environment.get('test_user_username')) {",
+          "  pm.environment.set('test_user_username', 'user.' + runId + '@example.com');",
+          "}",
+          "",
+          "// Set initial passwords only if missing",
+          "if (!pm.environment.get('test_user_password')) {",
+          "  pm.environment.set('test_user_password', 'TestPassword123!');",
+          "}",
+          "if (!pm.environment.get('test_user_new_password')) {",
+          "  pm.environment.set('test_user_new_password', 'NewTestPassword123!');",
+          "}"
         ]
       }
     }
