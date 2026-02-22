@@ -48,7 +48,7 @@ async def safe_json(request: Request) -> dict:
         return json.loads(body.decode("utf-8"))
     except json.JSONDecodeError:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Malformed JSON"
         )
 
