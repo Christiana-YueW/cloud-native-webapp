@@ -173,7 +173,7 @@ jobs:
 
       - name: Packer Init
         working-directory: packer
-        run: packer init aws-gcp.pkr.hcl
+        run: packer validate -var "app_zip=../webapp.zip" aws-gcp.pkr.hcl
 
       - name: Packer Validate
         working-directory: packer
