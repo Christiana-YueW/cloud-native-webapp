@@ -402,10 +402,12 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Max length input is handled (response returned)\", function () {",
-                      "  pm.expect(201).to.equal(pm.response.code);",
+                      "pm.test('Max length does not crash server', function() {",
+                      "  pm.expect(pm.response.code).to.not.equal(500);",
                       "});",
-                      ""
+                      "pm.test('Max length is handled (400/422)', function() {",
+                      "  pm.expect([400, 422]).to.include(pm.response.code);",
+                      "});"
                     ],
                     "type": "text/javascript",
                     "packages": {},
@@ -448,8 +450,8 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 422\", function () {",
-                      "    pm.response.to.have.status(422);",
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
                       "});",
                       "",
                       "pm.test(\"Content-Type is application/json\", function () {",
@@ -552,8 +554,8 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 422\", function () {",
-                      "    pm.response.to.have.status(422);",
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
                       "});",
                       "",
                       "pm.test(\"Content-Type is application/json\", function () {",
@@ -605,8 +607,8 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 422\", function () {",
-                      "    pm.response.to.have.status(422);",
+                      "pm.test(\"Status code is 400\", function () {",
+                      "    pm.response.to.have.status(400);",
                       "});",
                       "",
                       "pm.test(\"Content-Type is application/json\", function () {",
@@ -2804,12 +2806,33 @@
           "  throw new Error('Missing env var: base_url');",
           "}",
           "",
-          "// Always use a unique email each run (overwrite)",
-          "const ts = Date.now();",
-          "pm.environment.set('timestamp', ts);",
-          "pm.environment.set('test_user_username', 'user.' + ts + '@example.com');",
-          "pm.environment.set('test_user_password', 'TestPassword123!');",
-          "pm.environment.set('test_user_new_password', 'NewTestPassword123!');"
+          "// Create a per-run id once (persists for the whole run)",
+          "let runId = pm.environment.get('run_id');",
+          "if (!runId) {",
+          "  runId = String(Date.now());",
+          "  pm.environment.set('run_id', runId);",
+          "",
+          "  // Reset all test state at the start of each run",
+          "  pm.environment.unset('test_user_username');",
+          "  pm.environment.unset('test_user_password');",
+          "  pm.environment.unset('test_user_new_password');",
+          "  pm.environment.unset('test_user_id');",
+          "  pm.environment.unset('test_course_id');",
+          "  pm.environment.unset('test_course_id_s3');",
+          "}",
+          "",
+          "// Generate user only once per run",
+          "if (!pm.environment.get('test_user_username')) {",
+          "  pm.environment.set('test_user_username', 'user.' + runId + '@example.com');",
+          "}",
+          "",
+          "// Set initial passwords only if missing",
+          "if (!pm.environment.get('test_user_password')) {",
+          "  pm.environment.set('test_user_password', 'TestPassword123!');",
+          "}",
+          "if (!pm.environment.get('test_user_new_password')) {",
+          "  pm.environment.set('test_user_new_password', 'NewTestPassword123!');",
+          "}"
         ]
       }
     }

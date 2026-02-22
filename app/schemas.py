@@ -16,16 +16,16 @@ from enum import Enum
 class UserCreate(BaseModel):
 
    
-    first_name: str = Field(..., min_length=1)
-    last_name: str = Field(..., min_length=1)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
     username: EmailStr
     password: str = Field(..., min_length=8)
 
 
 class UserUpdate(BaseModel):
 
-    first_name: Optional[str] = Field(None, min_length=1)
-    last_name: Optional[str] = Field(None, min_length=1)
+    first_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    last_name: Optional[str] = Field(None, min_length=1, max_length=100)
     password: Optional[str] = Field(None, min_length=8)
 
     @field_validator('first_name', 'last_name', 'password')
