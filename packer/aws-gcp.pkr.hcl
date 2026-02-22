@@ -43,11 +43,6 @@ variable "app_zip" {
   default = "webapp.zip"
 }
 
-variable "db_password" {
-  type      = string
-  sensitive = true
-}
-
 # ==================== AWS Builder ====================
 
 source "amazon-ebs" "ubuntu" {
@@ -74,6 +69,13 @@ source "amazon-ebs" "ubuntu" {
 
   ssh_username = "ubuntu"
 
+  launch_block_device_mappings {
+    device_name           = "/dev/sda1"
+    volume_size           = 25
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
+
   tags = {
     Name        = "csye6225-webapp"
     Environment = "dev"
@@ -95,8 +97,6 @@ source "googlecompute" "ubuntu" {
   image_family      = "csye6225-webapp"
   image_description = "Custom GCP Image for CSYE6225 webapp"
 
-
-
   ssh_username = "ubuntu"
 
   tags = ["packer"]
@@ -114,19 +114,25 @@ build {
   }
 
   provisioner "file" {
-    source      = "../scripts/setup.sh"
+    source      = "${path.root}/../scripts/setup.sh"
     destination = "/tmp/setup.sh"
   }
 
   provisioner "shell" {
     environment_vars = [
       "DEBIAN_FRONTEND=noninteractive",
-      "DB_PASSWORD=${var.db_password}"
     ]
     inline = [
       "chmod +x /tmp/setup.sh",
       "sudo -E bash /tmp/setup.sh /tmp/webapp.zip",
-      "sudo systemctl enable csye6225"
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo rm -f /tmp/webapp.zip /tmp/setup.sh",
+      "sudo apt-get clean",
+      "sudo rm -rf /var/lib/apt/lists/*",
     ]
   }
 }
@@ -143,21 +149,25 @@ build {
   }
 
   provisioner "file" {
-    source      = "../scripts/setup.sh"
+    source      = "${path.root}/../scripts/setup.sh"
     destination = "/tmp/setup.sh"
   }
 
   provisioner "shell" {
     environment_vars = [
       "DEBIAN_FRONTEND=noninteractive",
-      "DB_PASSWORD=${var.db_password}"
     ]
     inline = [
       "chmod +x /tmp/setup.sh",
       "sudo -E bash /tmp/setup.sh /tmp/webapp.zip",
-      "sudo systemctl enable csye6225"
     ]
   }
 
-
+  provisioner "shell" {
+    inline = [
+      "sudo rm -f /tmp/webapp.zip /tmp/setup.sh",
+      "sudo apt-get clean",
+      "sudo rm -rf /var/lib/apt/lists/*",
+    ]
+  }
 }

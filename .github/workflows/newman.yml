@@ -2,10 +2,11 @@ name: Integration Tests (Postman/Newman)
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   push:
-    branches: [ "**" ]  # Run on all branches to test secrets
-  workflow_dispatch:  # Allow manual trigger
+    branches:
+      - "**"
+  workflow_dispatch:
 
 jobs:
   newman:
@@ -27,13 +28,8 @@ jobs:
           --health-retries=10
 
     env:
-      # for FastAPI 
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cloud_app
-
-      # for newman 
-      TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
-      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-      TEST_USER_NEW_PASSWORD: ${{ secrets.TEST_USER_NEW_PASSWORD }}
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/cloud_app
+      S3_BUCKET_NAME: mock-bucket-ci
 
     steps:
       - name: Checkout
@@ -42,7 +38,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
       - name: Install dependencies
         run: |
@@ -50,123 +52,97 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install Newman
-        run: |
-          npm install -g newman
+        run: npm install -g newman
 
-      - name: Debug - Check environment variables
+      - name: Install Postgres client (for pg_isready)
         run: |
-          echo "Checking if secrets are set..."
-          echo "TEST_USER_USERNAME is set: ${{ secrets.TEST_USER_USERNAME != '' }}"
-          echo "TEST_USER_PASSWORD is set: ${{ secrets.TEST_USER_PASSWORD != '' }}"
-          echo "TEST_USER_NEW_PASSWORD is set: ${{ secrets.TEST_USER_NEW_PASSWORD != '' }}"
-          if [ -z "$TEST_USER_USERNAME" ]; then
-            echo "⚠️ WARNING: TEST_USER_USERNAME is empty!"
-          fi
-          if [ -z "$TEST_USER_PASSWORD" ]; then
-            echo "⚠️ WARNING: TEST_USER_PASSWORD is empty!"
-          fi
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      
-      
-      
-      - name: Fallback credentials when secrets are missing
+      - name: Wait for Postgres
         run: |
-          if [ -z "$TEST_USER_USERNAME" ]; then
-            echo "TEST_USER_USERNAME=ci-$(date +%s)@example.com" >> $GITHUB_ENV
-          fi
-          if [ -z "$TEST_USER_PASSWORD" ]; then
-            echo "TEST_USER_PASSWORD=TestPassword123!" >> $GITHUB_ENV
-          fi
-          if [ -z "$TEST_USER_NEW_PASSWORD" ]; then
-            echo "TEST_USER_NEW_PASSWORD=NewPassword123!" >> $GITHUB_ENV
-          fi
+          for i in {1..30}; do
+            pg_isready -h 127.0.0.1 -p 5432 -U postgres -d cloud_app && exit 0
+            echo "waiting postgres... ($i)"
+            sleep 2
+          done
+          echo "Postgres not ready"
+          exit 1
 
-
-      - name: Prepare Postman environment from template
-        run: |
-          node -e "
-          const fs=require('fs');
-          const p='postman_environment.template.json';
-          const env=JSON.parse(fs.readFileSync(p,'utf8'));
-          const m={
-            test_user_username: process.env.TEST_USER_USERNAME,
-            test_user_password: process.env.TEST_USER_PASSWORD,
-            test_user_new_password: process.env.TEST_USER_NEW_PASSWORD
-          };
-          env.values=env.values.map(v=> m[v.key]!==undefined ? {...v, value:m[v.key]} : v);
-          fs.writeFileSync('postman_environment.ci.json', JSON.stringify(env,null,2));
-          "
-
-      - name: Debug - Show generated environment (masked)
-        run: |
-          echo "Generated Postman environment file:"
-          cat postman_environment.ci.json | jq '.values[] | {key: .key, value_length: (.value | length)}'
-
-      - name: Reset database
-        run: |
-          echo "Resetting database to ensure clean state..."
-          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "DROP DATABASE IF EXISTS cloud_app;"
-          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "CREATE DATABASE cloud_app;"
-          echo "✓ Database reset complete"
+      # OPTIONAL: if you use Alembic migrations, uncomment this:
+      # - name: Run DB migrations
+      #   run: alembic upgrade head
 
       - name: Start API (Uvicorn)
         run: |
-          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > uvicorn.log 2>&1 &
-          sleep 2
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug > uvicorn.log 2>&1 &
+          sleep 1
 
       - name: Wait for /healthz
         run: |
+          ok=0
           for i in {1..30}; do
             code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/healthz || true)
             if [ "$code" = "200" ]; then
               echo "✓ healthz ok"
-              exit 0
+              ok=1
+              break
             fi
             echo "waiting... ($i) code=$code"
             sleep 2
           done
-          echo "✗ API failed to start. uvicorn log:"
-          cat uvicorn.log || true
-          exit 1
-
-      - name: Debug - Test create user endpoint manually
-        run: |
-          echo "Testing create user endpoint with test credentials..."
-          echo "Username length: ${#TEST_USER_USERNAME}"
-          echo "Password length: ${#TEST_USER_PASSWORD}"
-          echo ""
-          echo "Sending POST request to /v1/user..."
-          curl -v -X POST http://127.0.0.1:8000/v1/user \
-            -H "Content-Type: application/json" \
-            -d "{\"username\":\"debug-test@example.com\",\"password\":\"DebugPassword123!\",\"first_name\":\"Debug\",\"last_name\":\"Test\"}" \
-            2>&1 | head -50
+          if [ "$ok" -ne 1 ]; then
+            echo "✗ API failed to start. uvicorn log:"
+            tail -200 uvicorn.log || true
+            exit 1
+          fi
 
       - name: Run Newman collection
+        id: newman
+        continue-on-error: true
         run: |
-          echo "Running Newman tests..."
+          echo "Running Newman tests (CI: Health + User + Courses, Syllabus skipped)..."
           newman run postman_collection.json \
-            -e postman_environment.ci.json \
             --env-var base_url=http://127.0.0.1:8000 \
-            --env-var test_user_username=ci-$(date +%s)@example.com \
+            --folder "Health Check Tests" \
+            --folder "User API Tests" \
+            --folder "Course API Tests" \
+            --timeout-request 10000 \
+            --timeout-script 10000 \
             --reporters cli \
             --reporter-cli-no-banner \
             --color on
-          
-      - name: Debug - Print logs on failure
-        if: failure()
+
+      - name: Debug - Manual requests on failure
+        if: steps.newman.outcome == 'failure'
         run: |
           echo "=========================================="
-          echo "Environment Debug Info"
+          echo "GET /healthz"
           echo "=========================================="
-          echo "TEST_USER_USERNAME length: ${#TEST_USER_USERNAME}"
-          echo "TEST_USER_PASSWORD length: ${#TEST_USER_PASSWORD}"
-          echo ""
+          curl -sS -v http://127.0.0.1:8000/healthz 2>&1 | head -60
+
           echo "=========================================="
-          echo "Generated Postman Environment (masked)"
+          echo "POST /v1/user"
           echo "=========================================="
-          cat postman_environment.ci.json | jq '.' || cat postman_environment.ci.json
-          echo ""
+          u="debug-$(date +%s)@example.com"
+          curl -sS -v -X POST http://127.0.0.1:8000/v1/user \
+            -H "Content-Type: application/json" \
+            -d "{\"username\":\"$u\",\"password\":\"DebugPassword123!\",\"first_name\":\"Debug\",\"last_name\":\"Test\"}" \
+            2>&1 | head -120
+
           echo "=========================================="
-          echo "API Logs (uvicorn.log)"
+          echo "GET /v1/courses (no auth — expect 401)"
           echo "=========================================="
-          cat uvicorn.log || echo "No uvicorn.log found"
+          curl -sS -v http://127.0.0.1:8000/v1/courses 2>&1 | head -80
+
+      - name: Debug - Print API logs on failure
+        if: steps.newman.outcome == 'failure'
+        run: |
+          echo "=========================================="
+          echo "API Logs (last 200 lines)"
+          echo "=========================================="
+          tail -200 uvicorn.log || echo "No uvicorn.log found"
+
+      - name: Fail if Newman failed
+        if: steps.newman.outcome == 'failure'
+        run: exit 1

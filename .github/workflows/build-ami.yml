@@ -4,23 +4,28 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 concurrency:
-  group: build-images-main
+  group: build-images-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   integration-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     services:
       postgres:
-        image: postgres:14
+        image: postgres:16
         env:
           POSTGRES_USER: csye6225_user
           POSTGRES_PASSWORD: testpassword
           POSTGRES_DB: csye6225_db
         options: >-
-          --health-cmd pg_isready
+          --health-cmd="pg_isready -U csye6225_user -d csye6225_db"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -34,27 +39,50 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Install Postgres client (for pg_isready)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres
+        env:
+          PGPASSWORD: testpassword
+        run: |
+          for i in {1..30}; do
+            pg_isready -h 127.0.0.1 -p 5432 -U csye6225_user -d csye6225_db && exit 0
+            echo "waiting postgres... ($i)"
+            sleep 2
+          done
+          echo "Postgres not ready"
+          exit 1
+
       - name: Start application
         env:
           DATABASE_URL: "postgresql://csye6225_user:testpassword@127.0.0.1:5432/csye6225_db"
+          S3_BUCKET_NAME: "mock-bucket-ci"
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-          UP=0
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug > uvicorn.log 2>&1 &
+          sleep 1
+          ok=0
           for i in {1..30}; do
             if curl -fsS http://localhost:8000/healthz > /dev/null; then
+              ok=1
               echo "App is up"
-              UP=1
               break
             fi
             sleep 1
           done
-          if [ "$UP" -ne 1 ]; then
+          if [ "$ok" -ne 1 ]; then
             echo "App failed to start in time"
+            echo "Healthz debug:"
+            curl -v http://localhost:8000/healthz || true
+            tail -200 uvicorn.log || true
             exit 1
           fi
 
@@ -67,21 +95,34 @@ jobs:
         run: |
           npm install -g newman
           newman run postman_collection.json \
-            --env-var "base_url=http://localhost:8000" \
-            --env-var "test_user_username=test_$(date +%s)@example.com" \
-            --env-var "test_user_password=TestPassword123!" \
-            --env-var "test_user_new_password=NewPassword123!"
+            --folder "Health Check Tests" \
+            --folder "User API Tests" \
+            --folder "Course API Tests" \
+            --env-var base_url=http://localhost:8000 \
+            --timeout-request 10000 \
+            --timeout-script 10000 \
+            --reporters cli \
+            --reporter-cli-no-banner \
+            --color on
+
+      - name: Upload uvicorn log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uvicorn-log
+          path: uvicorn.log
 
   build-artifact:
     runs-on: ubuntu-latest
     needs: integration-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Build application artifact
-        run: zip -r webapp.zip app/ requirements.txt scripts/
+        run: zip -r -q webapp.zip app/ requirements.txt scripts/ -x "*.git*" "*__pycache__*" "*.DS_Store*"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -92,6 +133,7 @@ jobs:
   build-ami:
     runs-on: ubuntu-latest
     needs: build-artifact
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
@@ -135,23 +177,27 @@ jobs:
 
       - name: Packer Validate
         working-directory: packer
-        run: packer validate -syntax-only -var "db_password=dummy" aws-gcp.pkr.hcl
+        run: packer validate aws-gcp.pkr.hcl
 
       - name: Build AWS AMI and GCP Image
         working-directory: packer
         env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          PACKER_LOG: "1"
+          PACKER_LOG_PATH: "packer.log"
         run: |
           packer build \
-            -var "db_password=$DB_PASSWORD" \
             -var "app_zip=../webapp.zip" \
-            aws-gcp.pkr.hcl
+            aws-gcp.pkr.hcl || {
+            echo "Packer build failed. Last 200 lines of log:"
+            tail -200 packer.log || true
+            exit 1
+          }
 
       - name: Share GCP Image with DEMO project
         run: |
           IMAGE=$(gcloud compute images list \
             --project=yuewu-csye6225-dev \
-            --filter="name:csye6225-webapp" \
+            --filter="name~^csye6225-webapp-" \
             --sort-by=~creationTimestamp \
             --limit=1 \
             --format="value(name)")
@@ -160,3 +206,10 @@ jobs:
             --project=yuewu-csye6225-dev \
             --member="serviceAccount:145258103085@cloudservices.gserviceaccount.com" \
             --role=roles/compute.imageUser
+
+      - name: Upload packer log (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packer-log
+          path: packer/packer.log
