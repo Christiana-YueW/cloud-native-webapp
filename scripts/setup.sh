@@ -253,7 +253,7 @@ create_systemd_service() {
     cat > /etc/systemd/system/csye6225.service << EOF
 [Unit]
 Description=CSYE6225 Web Application
-After=network-online.target cloud-final.service
+After=network-online.target 
 Wants=network-online.target
 
 [Service]
