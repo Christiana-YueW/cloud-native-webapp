@@ -14,11 +14,16 @@ import httpx
 import json
 from sqlalchemy.exc import IntegrityError
 
-import boto3
+
 import uuid as uuid_lib
 from fastapi import UploadFile, File
 import os
 import asyncio
+
+from app.logging_config import setup_logging
+from app.middleware import LoggingMetricsMiddleware
+from app.db_metrics import setup_db_metrics
+from app import s3_client
 
 
 # ==================== Cloud Platform Detection ====================
@@ -31,13 +36,6 @@ CACHE_HEADERS = {
 }
 
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-_s3_client = None
-
-def get_s3_client():
-    global _s3_client
-    if _s3_client is None:
-        _s3_client = boto3.client("s3")
-    return _s3_client
 
 
 async def safe_json(request: Request) -> dict:
@@ -79,16 +77,27 @@ async def _detect_platform() -> str | None:
     return None
 
 
+logger = setup_logging()
+setup_db_metrics()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _detected_platform, S3_BUCKET_NAME
+
+    logger.info("Application startup - initializing resources")
+
     S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+    
     if not S3_BUCKET_NAME:
         raise RuntimeError("S3_BUCKET_NAME environment variable is not set")
     Base.metadata.create_all(bind=engine)
     _detected_platform = await _detect_platform()
+
+    logger.info(f"Application startup complete - platform={_detected_platform}")
+
     yield
 
+    logger.info("Application shutdown")
 # ==================== App Init ====================
 
 app = FastAPI(
@@ -109,6 +118,9 @@ app = FastAPI(
     """,
     version="1.0.0",
 )
+
+app.add_middleware(LoggingMetricsMiddleware)
+
 
 # ==================== Validation Error Handler ====================
 
@@ -695,14 +707,13 @@ async def upload_syllabus(
     s3_key = f"{course_id}/{file_uuid}/{safe_name}"
 
     # 上传到 S3
-    s3 = get_s3_client()
     try:
         await asyncio.to_thread(
-            s3.upload_fileobj,
+            s3_client.upload_fileobj,
             file.file,
             S3_BUCKET_NAME,
             s3_key,
-            ExtraArgs={"ContentType": content_type}
+            extra_args={"ContentType": content_type}
         )
     except Exception as e:
         raise HTTPException(
@@ -712,6 +723,7 @@ async def upload_syllabus(
 
     # 生成 presigned URL（bucket 是 private，需要签名才能访问）
     try:
+        s3 = s3_client.get_s3_client()
         url = s3.generate_presigned_url(
             "get_object",
             Params={"Bucket": S3_BUCKET_NAME, "Key": s3_key},
@@ -737,7 +749,7 @@ async def upload_syllabus(
     except IntegrityError:
         db.rollback()
         try:
-            await asyncio.to_thread(s3.delete_object, Bucket=S3_BUCKET_NAME, Key=s3_key)
+            await asyncio.to_thread(s3_client.delete_file, S3_BUCKET_NAME, s3_key)
         except Exception:
             pass
         raise HTTPException(
@@ -747,7 +759,7 @@ async def upload_syllabus(
     except Exception:
         db.rollback()
         try:
-            await asyncio.to_thread(s3.delete_object, Bucket=S3_BUCKET_NAME, Key=s3_key)
+            await asyncio.to_thread(s3_client.delete_file, S3_BUCKET_NAME, s3_key)
         except Exception:
             pass
         raise HTTPException(
@@ -795,9 +807,9 @@ async def delete_syllabus(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No syllabus found for this course")
 
     # 先删 S3，失败直接 503，不动 DB
-    s3 = get_s3_client()
+
     try:
-        await asyncio.to_thread(s3.delete_object, Bucket=S3_BUCKET_NAME, Key=syllabus.s3_object_key)
+        await asyncio.to_thread(s3_client.delete_file, S3_BUCKET_NAME, syllabus.s3_object_key)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -128,9 +128,39 @@ build {
     ]
   }
 
+  # Install CloudWatch Unified Agent
   provisioner "shell" {
     inline = [
-      "sudo rm -f /tmp/webapp.zip /tmp/setup.sh",
+      "echo 'Installing CloudWatch Unified Agent...'",
+      "sudo apt-get update -y",
+      "sudo apt-get install -y wget",
+      "wget -O /tmp/amazon-cloudwatch-agent.deb https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb",
+      "sudo dpkg -i /tmp/amazon-cloudwatch-agent.deb",
+      "rm -f /tmp/amazon-cloudwatch-agent.deb",
+      "echo 'CloudWatch Agent installed successfully'"
+    ]
+  }
+
+  # Copy CloudWatch Agent configuration
+  provisioner "file" {
+    source      = "${path.root}/../cloudwatch/amazon-cloudwatch-agent.json"
+    destination = "/tmp/amazon-cloudwatch-agent.json"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo mkdir -p /opt/aws/amazon-cloudwatch-agent/etc/",
+      "sudo mv /tmp/amazon-cloudwatch-agent.json /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json",
+      "sudo chown root:root /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json",
+      "sudo chmod 644 /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json",
+      "sudo systemctl enable amazon-cloudwatch-agent",
+      "echo 'CloudWatch Agent configuration copied and service enabled'"
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo rm -f /tmp/webapp.zip /tmp/setup.sh /tmp/amazon-cloudwatch-agent.json",
       "sudo apt-get clean",
       "sudo rm -rf /var/lib/apt/lists/*",
     ]

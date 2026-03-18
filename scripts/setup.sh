@@ -242,6 +242,19 @@ set_permissions() {
 
     log_info "✓ File permissions set successfully"
     echo ""
+
+    # Create log directory for CloudWatch
+    log_info "Creating log directory for CloudWatch agent..."
+    mkdir -p /var/log/csye6225
+    chown csye6225:csye6225 /var/log/csye6225
+    chmod 755 /var/log/csye6225
+    
+    # Create empty log file with correct permissions
+    touch /var/log/csye6225/webapp.log
+    chown csye6225:csye6225 /var/log/csye6225/webapp.log
+    chmod 644 /var/log/csye6225/webapp.log
+    
+    log_info "✓ Log directory and file created successfully"
 }
 
 # ============================================================================
