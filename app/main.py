@@ -8,7 +8,7 @@ from app.models import User, HealthCheck, Course, Syllabus
 from app.schemas import UserCreate, UserUpdate, UserResponse, CourseCreate, CourseUpdate, CourseResponse, SyllabusResponse
 from uuid import UUID
 from app.auth import hash_password, get_current_user
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import base64
 import httpx
 import json
@@ -25,6 +25,9 @@ from app.middleware import LoggingMetricsMiddleware
 from app.db_metrics import setup_db_metrics
 from app import s3_client
 
+import boto3
+
+
 
 # ==================== Cloud Platform Detection ====================
 
@@ -36,6 +39,7 @@ CACHE_HEADERS = {
 }
 
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN")
 
 
 async def safe_json(request: Request) -> dict:
@@ -427,11 +431,21 @@ def create_user(user: UserCreate, response: Response, db: Session = Depends(get_
         )
 
     hashed_password = hash_password(user.password)
+
+    # 生成 verification token 和过期时间（1分钟后）
+    verification_token = str(uuid_lib.uuid4())
+    token_expires_at = datetime.now(timezone.utc) + timedelta(minutes=1)
+
+
     new_user = User(
         username=user.username,
         password=hashed_password,
         first_name=user.first_name,
-        last_name=user.last_name
+        last_name=user.last_name,
+        
+        verification_token=verification_token,
+        token_expires_at=token_expires_at,
+        is_verified=False
     )
     try:
         db.add(new_user)
@@ -443,6 +457,26 @@ def create_user(user: UserCreate, response: Response, db: Session = Depends(get_
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists"
         )
+    
+
+     # 发布 SNS 消息触发 Lambda 发验证邮件
+    try:
+        if SNS_TOPIC_ARN:
+            sns_client = boto3.client("sns", region_name=os.getenv("AWS_REGION", "us-east-1"))
+            message = {
+                "email": new_user.username,
+                "token": verification_token,
+                "first_name": new_user.first_name
+            }
+            sns_client.publish(
+                TopicArn=SNS_TOPIC_ARN,
+                Message=json.dumps(message)
+            )
+            logger.info(f"SNS message published for user: {new_user.username}")
+    except Exception as e:
+        logger.error(f"Failed to publish SNS message: {str(e)}")
+        # 注意：SNS 发送失败不影响用户注册，只记录错误
+
     response.headers["Location"] = f"/v1/user/self"
     return new_user
 
@@ -466,7 +500,13 @@ async def update_user(
 
     raw = await safe_json(request)
 
-    forbidden = {"id", "username", "account_created", "account_updated"}
+    forbidden = {"id", 
+                 "username", 
+                 "account_created", 
+                 "account_updated", 
+                 "is_verified",
+                "verification_token",
+                "token_expires_at"}
     if any(k in raw for k in forbidden):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -829,3 +869,52 @@ async def delete_syllabus(
         )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ==================== Email Verification ====================
+
+@app.get("/validateEmail", status_code=status.HTTP_200_OK,
+         summary="Verify user email address")
+def validate_email(
+    email: str,
+    token: str,
+    db: Session = Depends(get_db)
+):
+    # 查找用户
+    user = db.query(User).filter(User.username == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification link"
+        )
+
+    # 检查用户是否已经验证过
+    if user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email address is already verified"
+        )
+
+    # 检查 token 是否存在且匹配
+    if not user.verification_token or user.verification_token != token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification token"
+        )
+
+    # 检查 token 是否过期（1分钟）
+    if not user.token_expires_at or datetime.now(timezone.utc) > user.token_expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification link has expired"
+        )
+
+    # 验证通过，更新用户状态
+    user.is_verified = True
+    user.verification_token = None
+    user.token_expires_at = None
+    db.commit()
+
+    logger.info(f"Email verified successfully for user: {email}")
+
+    return {"message": "Email address verified successfully"}

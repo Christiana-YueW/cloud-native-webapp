@@ -17,6 +17,10 @@ class User(Base):
     account_created = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     account_updated = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verification_token = Column(String(255), nullable=True)
+    token_expires_at = Column(DateTime(timezone=True), nullable=True)
+
     def __repr__(self):
         return f"<User(username='{self.username}', first_name='{self.first_name}')>"
 

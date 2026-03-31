@@ -44,7 +44,9 @@ class UserResponse(BaseModel):
     last_name: str
     username: str
     account_created: datetime
-    account_updated: datetime    
+    account_updated: datetime   
+
+    is_verified: bool 
 
 
     class Config:
