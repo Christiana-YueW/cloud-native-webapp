@@ -72,6 +72,15 @@ install_system_deps() {
         libpq-dev \
         netcat-openbsd
 
+
+    # Install AWS CLI v2
+    log_info "Installing AWS CLI v2..."
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+    unzip -q /tmp/awscliv2.zip -d /tmp
+    /tmp/aws/install
+    rm -rf /tmp/awscliv2.zip /tmp/aws
+    log_info "✓ AWS CLI v2 installed"
+
     # Clean up apt cache to reduce AMI size
     apt-get clean
     rm -rf /var/lib/apt/lists/*
