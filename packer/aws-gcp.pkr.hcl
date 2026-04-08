@@ -35,7 +35,7 @@ variable "gcp_demo_project_id" {
 
 variable "gcp_zone" {
   type    = string
-  default = "us-east1-c"
+  default = "us-central1-a"
 }
 
 variable "app_zip" {
