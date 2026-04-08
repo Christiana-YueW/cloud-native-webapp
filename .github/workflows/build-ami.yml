@@ -154,17 +154,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Setup GCP credentials
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-
-      - name: Setup gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Set GCP project
-        run: gcloud config set project yuewu-csye6225-dev
-
       - name: Setup Packer
         uses: hashicorp/setup-packer@v3
         with:
@@ -185,12 +174,10 @@ jobs:
           PACKER_LOG_PATH: "packer.log"
         run: |
           packer build \
+            -only="aws.amazon-ebs.ubuntu" \
             -var "app_zip=../webapp.zip" \
-            aws-gcp.pkr.hcl || {
-            echo "Packer build failed. Last 200 lines of log:"
-            tail -200 packer.log || true
-            exit 1
-          }
+            aws-gcp.pkr.hcl
+
 
       - name: Get AMI ID
         id: get-ami
@@ -209,19 +196,6 @@ jobs:
             --image-id ${{ steps.get-ami.outputs.AMI_ID }} \
             --launch-permission "Add=[{UserId=${{ secrets.DEMO_AWS_ACCOUNT_ID }}}]"
 
-      - name: Share GCP Image with DEMO project
-        run: |
-          IMAGE=$(gcloud compute images list \
-            --project=yuewu-csye6225-dev \
-            --filter="name~^csye6225-webapp-" \
-            --sort-by=~creationTimestamp \
-            --limit=1 \
-            --format="value(name)")
-          echo "Sharing image: $IMAGE"
-          gcloud compute images add-iam-policy-binding $IMAGE \
-            --project=yuewu-csye6225-dev \
-            --member="serviceAccount:145258103085@cloudservices.gserviceaccount.com" \
-            --role=roles/compute.imageUser
 
       - name: Upload packer log (always)
         if: always()
