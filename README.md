@@ -186,4 +186,4 @@ DATABASE_URL=postgresql://username@localhost:5432/webapp_db
 ## Notes
 
 - **SSH Required:** Repository must be cloned via SSH (`git@github.com:`)
-- **No Credentials in Git:** `.env` and `postman_environment.json` are excluded via `.gitignore`
+- **No Credentials in Git:** `.env` and `postman_environment.json` are excluded via `.gitignore`# verify full pipeline
