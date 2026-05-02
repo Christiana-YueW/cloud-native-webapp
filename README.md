@@ -1,91 +1,122 @@
-# CSYE 6225 - Cloud Native Web Application
+# Cloud-Native Web Application
 
-**Student:** Yue Wu  
-**Organization:** yuewu-cloud  
-**Semester:** Spring 2026
+A backend-focused web application built with FastAPI and PostgreSQL, designed for cloud-native deployment on AWS and GCP. The project combines API development, authentication, relational data modeling, image/file storage, observability, machine image baking, and infrastructure integration for asynchronous workflows.
 
-## Prerequisites
+## Why This Project Matters
+
+This repository reflects the type of backend and full-stack engineering work I want to do professionally:
+
+- designing REST APIs
+- building database-backed services
+- integrating cloud services into application workflows
+- packaging applications for repeatable deployment
+- adding metrics, logging, and health checks for operations
+
+## Architecture
+
+The application is centered around a FastAPI service that exposes versioned API endpoints and persists data in PostgreSQL. In cloud deployments, it integrates with:
+
+- **S3** for syllabus file storage
+- **SNS** for asynchronous user-verification events
+- **CloudWatch** for logs and metrics
+- **Packer** for machine image creation
+- **Terraform-managed infrastructure** for compute, networking, storage, IAM, and supporting services
+
+At startup, the service detects whether it is running on AWS or GCP and adjusts cloud-specific behavior accordingly.
+
+## Tech Stack
+
+- **Language:** Python 3.11+
+- **Framework:** FastAPI
+- **Database:** PostgreSQL
+- **ORM:** SQLAlchemy
+- **Authentication:** HTTP Basic Auth with password hashing
+- **Cloud:** AWS S3, SNS, CloudWatch, EC2 image pipeline
+- **Tooling:** Packer, Postman/Newman, GitHub Actions
+
+## Core Features
+
+- User registration and authenticated self-service account APIs
+- Health check endpoint for service monitoring
+- Course and syllabus-related data models
+- S3-backed file handling
+- SNS publishing for downstream verification workflows
+- Structured logging and metrics middleware
+- Automated API testing with Newman
+
+## API Surface
+
+Key routes include:
+
+- `GET /healthz`
+- `POST /v1/user`
+- `GET /v1/user/self`
+- `PUT /v1/user/self`
+
+Swagger docs are available locally at `/docs`.
+
+## Repository Structure
+
+```text
+webapp/
+├── app/
+│   ├── main.py
+│   ├── auth.py
+│   ├── database.py
+│   ├── models.py
+│   ├── schemas.py
+│   ├── s3_client.py
+│   ├── metrics.py
+│   ├── db_metrics.py
+│   ├── middleware.py
+│   └── logging_config.py
+├── cloudwatch/
+│   └── amazon-cloudwatch-agent.json
+├── packer/
+│   └── aws-gcp.pkr.hcl
+├── scripts/
+│   └── setup.sh
+├── postman_collection.json
+├── postman_environment.template.json
+└── requirements.txt
+```
+
+## Local Development
+
+### Prerequisites
 
 - Python 3.11+
 - PostgreSQL 14+
-- Node.js 18+ (for Newman)
-- Git with SSH configured
+- Node.js 18+ for Newman-based API testing
 
-## Technology Stack
-
-- **Framework:** FastAPI 0.128.0
-- **Database:** PostgreSQL with SQLAlchemy ORM
-- **Authentication:** HTTP Basic Auth with BCrypt
-- **Testing:** Postman/Newman
-
-## Build Instructions
-
-### 1. Clone Repository
+### Setup
 
 ```bash
 git clone git@github.com:YOUR_USERNAME/webapp.git
 cd webapp
-```
 
-### 2. Set Up Python Environment
-
-```bash
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 3. Configure Database
-
-```bash
-# Create database
 createdb webapp_db
-
-# Create .env file
 echo 'DATABASE_URL=postgresql://YOUR_USERNAME@localhost:5432/webapp_db' > .env
-```
 
-Replace `YOUR_USERNAME` with your PostgreSQL username.
-
-### 4. Run Application
-
-```bash
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Application will be available at: http://127.0.0.1:8000
+Then open:
 
-API Documentation: http://127.0.0.1:8000/docs
-
-## API Endpoints
-
-- `GET /healthz` - Health check
-- `POST /v1/user` - Create user
-- `GET /v1/user/self` - Get user info (requires auth)
-- `PUT /v1/user/self` - Update user info (requires auth)
+- App: `http://127.0.0.1:8000`
+- Docs: `http://127.0.0.1:8000/docs`
 
 ## Testing
 
-### Install Newman
+Integration tests are exercised with Postman/Newman.
 
 ```bash
 npm install -g newman
-```
 
-### Run Integration Tests Locally
-
-**Start the application:**
-
-```bash
-# Terminal 1: Start application
-source venv/bin/activate
-uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-**Run tests with Newman:**
-
-```bash
-# Terminal 2: Clean database and run tests
 psql webapp_db -c "DELETE FROM users;"
 
 newman run postman_collection.json \
@@ -94,96 +125,25 @@ newman run postman_collection.json \
   --env-var "test_user_new_password=NewPassword123!"
 ```
 
-**Expected output:**
+## Deployment Notes
 
-```
-┌─────────────────────┬──────────┬─────────┐
-│                     │ executed │  failed │
-├─────────────────────┼──────────┼─────────┤
-│          iterations │        1 │       0 │
-│            requests │       19 │       0 │
-│          assertions │       55 │       0 │
-└─────────────────────┴──────────┴─────────┘
-```
+This repository is intended to work as part of a larger cloud-native deployment flow:
 
-### CI/CD Testing
+- **Packer** builds machine images
+- **Terraform** provisions infrastructure
+- **EC2 user data** injects runtime configuration
+- **SNS** triggers asynchronous verification workflows
+- **CloudWatch** collects logs and metrics
 
-**GitHub Actions uses GitHub Secrets for test credentials.**
+## What This Repo Demonstrates
 
-**Required Secrets** (configured in repository settings):
+- backend API design
+- relational data modeling
+- cloud service integration
+- deployment-minded application structure
+- observability and operational readiness
 
-- `TEST_USER_USERNAME` - Test email for user creation
-- `TEST_USER_PASSWORD` - Initial test password
-- `TEST_USER_NEW_PASSWORD` - Password for update tests
+## Related Repositories
 
-**To configure secrets:**
-
-1. Go to: `Settings` → `Secrets and variables` → `Actions`
-2. Click `New repository secret`
-3. Add each secret with appropriate values
-
-**Workflow reference:** `.github/workflows/ci.yml` uses these secrets:
-
-```yaml
-env:
-  TEST_USER_USERNAME: ${{ secrets.TEST_USER_USERNAME }}
-  TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-  TEST_USER_NEW_PASSWORD: ${{ secrets.TEST_USER_NEW_PASSWORD }}
-```
-
-### Test Coverage
-
-- **19 API requests**
-- **55 assertions**
-- **Coverage:** Health Check (4), Create User (6), Get User (3), Update User (6)
-
-## CI/CD
-
-### GitHub Actions
-
-Automated tests run on every pull request to `main` branch.
-
-**Workflow:** `.github/workflows/ci.yml`
-
-### Branch Protection
-
-The `main` branch requires:
-- Pull request before merging
-- All CI tests to pass
-- Branch to be up to date
-
-## Project Structure
-
-```
-webapp/
-├── app/                  # Application code
-│   ├── main.py          # FastAPI app and routes
-│   ├── models.py        # Database models
-│   ├── schemas.py       # Pydantic schemas
-│   ├── database.py      # Database config
-│   └── auth.py          # Authentication
-├── .github/workflows/   # CI/CD configuration
-├── postman_collection.json           # Tests
-├── postman_environment.template.json # Template
-├── requirements.txt     # Dependencies
-└── .env                 # Local config (not committed)
-```
-
-## Environment Configuration
-
-### Development (.env file)
-
-```env
-DATABASE_URL=postgresql://username@localhost:5432/webapp_db
-```
-
-### Testing (environment variables)
-
-- `test_user_username` - Test email
-- `test_user_password` - Test password
-- `test_user_new_password` - Updated password for tests
-
-## Notes
-
-- **SSH Required:** Repository must be cloned via SSH (`git@github.com:`)
-- **No Credentials in Git:** `.env` and `postman_environment.json` are excluded via `.gitignore`# verify full pipeline
+- `serverless` - Lambda-based asynchronous email verification workflow
+- `tf-infra` - Terraform code for the infrastructure that supports this application
